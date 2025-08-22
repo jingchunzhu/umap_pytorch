@@ -109,6 +109,8 @@ class PUMAP():
         num_workers=1,
         num_gpus=1,
         match_nonparametric_umap=False,
+        knn_indices=None,    
+        knn_dists=None,
     ):
         self.encoder = encoder
         self.decoder = decoder
@@ -125,6 +127,8 @@ class PUMAP():
         self.num_workers = num_workers
         self.num_gpus = num_gpus
         self.match_nonparametric_umap = match_nonparametric_umap
+        self.knn_indices = knn_indices
+        self.knn_dists = knn_dists
         
     def fit(self, X):
         trainer = pl.Trainer(accelerator='gpu', devices=1, max_epochs=self.epochs)
@@ -138,7 +142,7 @@ class PUMAP():
             
         if not self.match_nonparametric_umap:
             self.model = Model(self.lr, encoder, decoder, beta=self.beta, min_dist=self.min_dist, reconstruction_loss=self.reconstruction_loss)
-            graph = get_umap_graph(X, n_neighbors=self.n_neighbors, metric=self.metric, random_state=self.random_state)
+            graph = get_umap_graph(X, n_neighbors=self.n_neighbors, metric=self.metric, random_state=self.random_state, knn_indices=self.knn_indices, knn_dists=self.knn_dists)
             trainer.fit(
                 model=self.model,
                 datamodule=Datamodule(UMAPDataset(X, graph), self.batch_size, self.num_workers)

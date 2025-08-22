@@ -50,30 +50,35 @@ def umap_loss(embedding_to, embedding_from, _a, _b, batch_size, negative_sample_
     loss = torch.mean(ce_loss)
     return loss
 
-def get_umap_graph(X, n_neighbors=10, metric="cosine", random_state=None):
+def get_umap_graph(X, n_neighbors=10, metric="cosine", random_state=None, knn_indices= None, knn_dists = None):
     random_state = check_random_state(None) if random_state == None else random_state
-    # number of trees in random projection forest
-    n_trees = 5 + int(round((X.shape[0]) ** 0.5 / 20.0))
-    # max number of nearest neighbor iters to perform
-    n_iters = max(5, int(round(np.log2(X.shape[0]))))
-    # distance metric
 
-    # get nearest neighbors
-    nnd = NNDescent(
-        X.reshape((len(X), np.product(np.shape(X)[1:]))),
-        n_neighbors=n_neighbors,
-        metric=metric,
-        n_trees=n_trees,
-        n_iters=n_iters,
-        max_candidates=60,
-        verbose=True
-    )
-    # get indices and distances
-    knn_indices, knn_dists = nnd.neighbor_graph
+    if (knn_indices is None) and (knn_dists is None) : 
+        print("Start knn ...")
+        # number of trees in random projection forest
+        n_trees = 5 + int(round((X.shape[0]) ** 0.5 / 20.0))
+        # max number of nearest neighbor iters to perform
+        n_iters = max(5, int(round(np.log2(X.shape[0]))))
 
-    # get indices and distances
-    knn_indices, knn_dists = nnd.neighbor_graph
+        # get nearest neighbors
+        nnd = NNDescent(
+            X.reshape((len(X), np.product(np.shape(X)[1:]))),
+            n_neighbors=n_neighbors,
+            metric=metric,
+            n_trees=n_trees,
+            n_iters=n_iters,
+            max_candidates=60,
+            verbose=True
+        )
+    
+        # get indices and distances
+        knn_indices, knn_dists = nnd.neighbor_graph
+        print("End of knn")
+    else:
+        print ("There are knn provided by the user")
+
     # build fuzzy_simplicial_set
+    print("Start fuzzy_simplicial_set ...")
     umap_graph, sigmas, rhos = fuzzy_simplicial_set(
         X = X,
         n_neighbors = n_neighbors,
@@ -83,4 +88,5 @@ def get_umap_graph(X, n_neighbors=10, metric="cosine", random_state=None):
         knn_dists = knn_dists,
     )
     
+    print("End fuzzy_simplicial_set")
     return umap_graph
